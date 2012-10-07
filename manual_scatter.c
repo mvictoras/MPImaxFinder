@@ -37,21 +37,19 @@ int parse_arguments(int argc, char **argv) {
 		}
 	}
 
-	printf("Creating %d random numbers and using %d physical processors and %d logical processors\n", n, p, k);
-	return 0;
+		return 0;
 }
 
 int main(int argc, char **argv) {
 	int i, myrank, numprocs, name_len, *array, dims[1], periods[1];
-	int *to_array, *local_array;
+	int *to_array, *local_array, nodes;
 	int local_rank, local_coords[1];
-	clock_t start, end;
+	//clock_t start, end;
 	char processor_name[MPI_MAX_PROCESSOR_NAME];
 	MPI_Comm comm_ring;
 	MPI_Status status;
-	
+  double start, end, dt;	
 	// Parse the arguments
-  printf("Parsing arguments\n");
   if( parse_arguments(argc, argv) ) return 1;
 	
   // Initialize MPI
@@ -59,7 +57,8 @@ int main(int argc, char **argv) {
 	MPI_Get_processor_name(processor_name, &name_len);
 
 	// Cartesian topology
-	dims[0] = k;
+  nodes = p * k;
+	dims[0] = nodes;
 	// Wrparound connections
 	periods[0] = 1;
 
@@ -68,9 +67,53 @@ int main(int argc, char **argv) {
 	MPI_Comm_rank(comm_ring, &myrank);
 	MPI_Comm_size(comm_ring, &numprocs);
 	MPI_Cart_coords(comm_ring, myrank, 1, local_coords);
-	printf("This is processor %s (%d-%d) out of %d\n", processor_name, myrank, local_coords[0], numprocs);
+	
+  //printf("This is processor %s (%d-%d) out of %d\n", processor_name, myrank, local_coords[0], numprocs);
 
-/*
+  int elem_per_proc;
+  if( local_coords[0] == numprocs - 1 )
+    elem_per_proc = n % numprocs;
+  else
+    elem_per_proc = n / numprocs;
+
+	local_array = (int *)malloc(sizeof(int) * elem_per_proc);// if we are in node 0
+  if( local_coords[0] == 0) {
+		unsigned int iseed = (unsigned int)time(NULL);
+    printf("(%s(%d/%d): Generating %d random numbers using %d physical processors and %d logical processors\n", processor_name, local_coords[0], numprocs, n, p, k);
+		srand (iseed);
+		array = (int *)malloc(sizeof(int) * n);
+    start = MPI_Wtime();
+		for(i = 0; i < n; i++) {
+			array[i] = rand();
+		}
+    end = MPI_Wtime();
+    dt = end - start;
+    printf("(%s(%d/%d): %d random numbers generated in %1.8fs\n", processor_name, local_coords[0], numprocs, n, dt);
+
+    // Divide the array into the nymber of processors
+    memcpy(local_array, array, elem_per_proc);
+		to_array = array;
+		to_array += elem_per_proc;
+		
+    // Distribute the results now
+    start = MPI_Wtime();
+		for( i = 1; i < nodes; i++) {
+      if( i == nodes - 1 ) elem_per_proc = n % numprocs;
+			MPI_Send(to_array, elem_per_proc, MPI_INT, i, i, comm_ring);
+			to_array += elem_per_proc;
+		}
+    end = MPI_Wtime();
+    dt = end - start;
+    printf("(%s(%d/%d): It took %1.8fs to distribute the numbers\n", processor_name, local_coords[0], numprocs, dt);
+  } else {
+    start = MPI_Wtime();
+		MPI_Recv(local_array, elem_per_proc, MPI_INT, 0, myrank, comm_ring, &status);
+	  end = MPI_Wtime();
+    dt = end - start;
+    printf("(%s(%d/%d): It took %1.8fs to receive the sub-array\n", processor_name, local_coords[0], numprocs, dt);
+}
+  
+  /*
 	int elem_per_proc = n / numprocs;
 	local_array = (int *)malloc(sizeof(int) * elem_per_proc);
 	// Read the file

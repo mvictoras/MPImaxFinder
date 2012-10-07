@@ -35,4 +35,4 @@ done
 
 echo "Running $7 Creating $n random numbers and using $p physical processors and $k logical processors"
 num_nodes=$[$p*$k]
-qsub -V -l nodes=$p:ppn=$k -v n=$n,p=$p,k=$k,proc=$7 ${HOME}/proj1/process.sh 
+qsub -V -l nodes=$p:ppn=$k -v n=$n,p=$p,k=$k,proc=$7,id=$8 ${HOME}/proj1/process.sh 

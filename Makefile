@@ -1,13 +1,18 @@
 CC=mpicc
-SOURCES=manual_scatter.c scatter.c
 
-all: manual_scatter scatter
+all: manual_scatter ring_scatter ring_shift ring_reduction
 
 manual_scatter: manual_scatter.c
 			$(CC) -o manual_scatter manual_scatter.c
 
-scatter: scatter.c
-			$(CC) -o scatter scatter.c
+scatter: ring_scatter.c
+			$(CC) -o ring_scatter ring_scatter.c
+
+ring_shift: ring_shift.c
+			$(CC) -o ring_shift ring_shift.c
+
+ring_reduction: ring_reduction.c
+			$(CC) -o ring_reduction ring_reduction.c
 
 clean:
 	    rm -rf manual_scatter scatter

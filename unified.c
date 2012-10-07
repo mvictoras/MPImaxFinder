@@ -102,6 +102,9 @@ int main(int argc, char **argv) {
   if( type == ring_shift ) {
     fmax_ring_shift(&comm_ring, local_rank, num_procs, local_coords, proc_name, local_array, elem_per_node);
   }
+  else if( type == ring_reduction ) {
+    fmax_ring_reduction(&comm_ring, local_rank, num_procs, local_coords, proc_name, local_array, elem_per_node);
+  }
  
 	MPI_Comm_free(&comm_ring);
 	MPI_Finalize(); // Exit MPI
@@ -260,6 +263,25 @@ void fmax_ring_shift(MPI_Comm *comm_ring, int local_rank, int num_procs,
 }
 
 void fmax_ring_reduction(MPI_Comm *comm_ring, int local_rank, int num_procs, int *local_coords, char *proc_name, int *local_array, int elem_per_node) {
+  double start, end, dt;
+  int i, local_max;
+  MPI_Status status;
 
+  start = MPI_Wtime();
+  local_max = find_max(local_array, 0, elem_per_node);
+  end = MPI_Wtime();
+  dt = end - start;
+  printf("(%s(%d/%d): Local max is %d (%1.8fs)\n", proc_name, local_coords[0], num_procs, local_max, dt);
+int found_max;
+
+  start = MPI_Wtime();
+  MPI_Reduce(&local_max, &found_max, 1, MPI_INT, MPI_MAX, 0, *comm_ring);
+  //MPI_Gather(local_array, elem_per_proc, MPI_INT, recv_array, elem_per_proc, MPI_INT, 0, comm_ring);
+  end = MPI_Wtime();
+  dt = end - start;
+
+  if( local_coords[0] == 0 ) 
+    printf("(%s(%d/%d): Max is %d (%1.8fs)\n",  proc_name, local_coords[0], num_procs, 
+                                                found_max, dt);
 }
 

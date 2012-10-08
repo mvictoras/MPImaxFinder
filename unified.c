@@ -62,11 +62,10 @@ int main(int argc, char **argv) {
   // Parse the arguments
   if( parse_arguments(argc, argv) ) return 1;
 	
-  t_start = MPI_Wtime();
   // Initialize MPI
   MPI_Init(&argc, &argv); 
 	MPI_Get_processor_name(proc_name, &name_len);
-
+  
   if( type == ring ) {
       create_ring_topology(&comm_new, &local_rank, &num_procs);
   }
@@ -80,6 +79,7 @@ int main(int argc, char **argv) {
     create_tree_topology(&comm_new, &local_rank, &num_procs);
   }
 
+  t_start = MPI_Wtime();
   if( scatter_method == manual )
     local_array = scatter_manual(&comm_new, local_rank, num_procs, proc_name, &elem_per_node);
   else if( scatter_method == scatter )
@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     fmax_gather(&comm_new, local_rank, num_procs, proc_name, local_array, elem_per_node);
   }
   
-  t_end - MPI_Wtime();
+  t_end = MPI_Wtime();
   total_time = t_end - t_start;
 
   printf("g\t%s\t%d\t%d\t%d\t%f\n", s_local_coords, num_procs, k, p, gen_time);

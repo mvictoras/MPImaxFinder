@@ -12,11 +12,6 @@ int computerStats = 0;
 // Timing
 double gen_time, process_time, comm_time, total_time;
 
-typedef enum {
-  manual,
-  scatter
-} SCATTER_METHOD;
-
 typedef enum { 
   ring, 
   hypercube,
@@ -30,7 +25,6 @@ typedef enum {
   gather
 } ALGO;
 
-SCATTER_METHOD scatter_method;
 TYPE type;
 ALGO algo;
 
@@ -42,7 +36,6 @@ void create_hypercube_topology(MPI_Comm *comm_new, int *local_rank, int *num_pro
 void create_2dmesh_topology(MPI_Comm *comm_new, int *local_rank, int *num_procs);
 void create_tree_topology(MPI_Comm *comm_new, int *local_rank, int *num_procs);
 
-int *scatter_manual(MPI_Comm *comm_new, int local_rank, int num_procs, char *proc_name, int *elem_per_node);
 int *scatter_mpi(MPI_Comm *comm_new, int local_rank, int num_procs, char *proc_name, int *elem_per_node);
 
 void fmax_ring_shift(MPI_Comm *comm_new, int local_rank, int num_procs, char *proc_name, int *local_array, int elem_per_node);
@@ -80,10 +73,7 @@ int main(int argc, char **argv) {
   }
 
   t_start = MPI_Wtime();
-  if( scatter_method == manual )
-    local_array = scatter_manual(&comm_new, local_rank, num_procs, proc_name, &elem_per_node);
-  else if( scatter_method == scatter )
-    local_array = scatter_mpi(&comm_new, local_rank, num_procs, proc_name, &elem_per_node);
+  local_array = scatter_mpi(&comm_new, local_rank, num_procs, proc_name, &elem_per_node);
 
   
   if( algo == ring_shift ) {
@@ -99,11 +89,12 @@ int main(int argc, char **argv) {
   t_end = MPI_Wtime();
   total_time = t_end - t_start;
 
-  printf("g\t%s\t%d\t%d\t%d\t%f\n", s_local_coords, num_procs, k, p, gen_time);
-  printf("p\t%s\t%d\t%d\t%d\t%f\n", s_local_coords, num_procs, k, p, process_time);
-  printf("c\t%s\t%d\t%d\t%d\t%f\n", s_local_coords, num_procs, k, p, comm_time);
-  printf("t\t%s\t%d\t%d\t%d\t%f\n", s_local_coords, num_procs, k, p, total_time);
-
+  if( computerStats ) {
+    printf("g\t%s\t%d\t%d\t%d\t%f\n", s_local_coords, num_procs, k, p, gen_time);
+    printf("p\t%s\t%d\t%d\t%d\t%f\n", s_local_coords, num_procs, k, p, process_time);
+    printf("c\t%s\t%d\t%d\t%d\t%f\n", s_local_coords, num_procs, k, p, comm_time);
+    printf("t\t%s\t%d\t%d\t%d\t%f\n", s_local_coords, num_procs, k, p, total_time);
+  }
 	MPI_Comm_free(&comm_new);
 	MPI_Finalize(); // Exit MPI
 	//fclose(f);
@@ -113,7 +104,7 @@ int main(int argc, char **argv) {
 int parse_arguments(int argc, char **argv) {
 	int c;
 
-	while( (c = getopt (argc, argv, "n:k:p:s:t:a:c")) != -1 ) {
+	while( (c = getopt (argc, argv, "n:k:p:t:a:c")) != -1 ) {
 		switch(c) {
 			case 'n':
 				n = atoi(optarg);
@@ -124,14 +115,6 @@ int parse_arguments(int argc, char **argv) {
 			case 'p':
 				p = atoi(optarg);
 				break;
-      case 's':
-        if( strcmp(optarg, "manual" ) == 0 ) scatter_method = manual;
-        else if( strcmp(optarg, "scatter" ) == 0 ) scatter_method = scatter;
-        else {
-          fprintf( stderr, "Option -%c %s in incorrect. Allowed values are: manual, scatter\n", optopt, optarg);
-          return 1;
-        }
-        break;
       case 't':
         if( strcmp(optarg, "ring" ) == 0 ) type = ring;
         else if( strcmp(optarg, "hypercube" ) == 0 ) type = hypercube;
@@ -175,8 +158,10 @@ int parse_arguments(int argc, char **argv) {
 void create_ring_topology(MPI_Comm *comm_new, int *local_rank, int *num_procs) {
 	int dims[1], periods[1];
  
+  MPI_Comm_size(MPI_COMM_WORLD, num_procs);
+
   dimension = 1;
-  dims[0] = p * k;
+  dims[0] = *num_procs;
   periods[0] = 1;
   local_coords = (int *) malloc(sizeof(int) * dimension);
   // Create the topology
@@ -270,8 +255,10 @@ int *generate_array(int num_procs, char *proc_name, int local_rank) {
   
   start = MPI_Wtime();
 	for(i = 0; i < n; i++) {
-		gen_array[i] = rand();
-	}
+		//gen_array[i] = rand();
+	  gen_array[i] = 1;
+  }
+  gen_array[2345345] = 10;
   end = MPI_Wtime();
   dt = end - start;
   gen_time = dt;
@@ -280,58 +267,6 @@ int *generate_array(int num_procs, char *proc_name, int local_rank) {
     printf("(%s(%d/%d)%s: %d random numbers generated in %1.8fs\n", proc_name, local_rank, num_procs, s_local_coords, n, dt);
   
   return gen_array;
-}
-
-int *scatter_manual(MPI_Comm *comm_new, int local_rank, int num_procs, 
-                    char *proc_name, int *elem_per_node) {
-  int *gen_array, *local_array, *ptr_gen_array, i;
-  double start, end, dt;	
-	MPI_Status status;
-  
-  // Find the elements per node
-  // Last node has the remaining elements of the array.
-  if( local_rank == num_procs - 1 )
-    *elem_per_node = n % num_procs;
-  else
-    *elem_per_node = n / num_procs;
-
-	local_array = (int *)malloc(sizeof(int) * *elem_per_node);// if we are in node 0
-  
-  // If this is node 0, create and distribute the array
-  if( local_rank ==  0) {
-    gen_array = generate_array(num_procs, proc_name, local_rank);
-    // Divide the array into the nymber of processors
-    memcpy(local_array, gen_array, *elem_per_node);
-		ptr_gen_array = gen_array;
-		ptr_gen_array += *elem_per_node;
-		
-    // Distribute the results now
-    start = MPI_Wtime();
-		for( i = 1; i < num_procs; i++) {
-      if( i == num_procs - 1 ) *elem_per_node = n % num_procs;
-			MPI_Send(ptr_gen_array, *elem_per_node, MPI_INT, i, i, *comm_new);
-			ptr_gen_array += *elem_per_node;
-		}
-    end = MPI_Wtime();
-    dt = end - start;
-    comm_time += dt;
-    
-    if( !computerStats ) 
-      printf("(%s(%d/%d)%s: It took %1.8fs to distribute the numbers\n", proc_name, local_rank, num_procs, s_local_coords, dt);
-
-    free(gen_array);
-  } else {
-    start = MPI_Wtime();
-		MPI_Recv(local_array, *elem_per_node, MPI_INT, 0, local_rank, *comm_new, &status);
-	  end = MPI_Wtime();
-    dt = end - start;
-    comm_time += dt;
-    
-    if( !computerStats )
-      printf("(%s(%d/%d)%s: It took %1.8fs to receive the sub-array\n", proc_name, local_rank, num_procs, s_local_coords, dt);
-  }
-
-  return local_array;
 }
 
 int *scatter_mpi(MPI_Comm *comm_new, int local_rank, int num_procs, 
@@ -436,22 +371,22 @@ void fmax_reduction(MPI_Comm *comm_new, int local_rank, int num_procs, char *pro
 
 void fmax_gather(MPI_Comm *comm_new, int local_rank, int num_procs, char *proc_name, int *local_array, int elem_per_node) {
   double start, end, dt;
-  int i, local_max, found_max[1];
+  int i, local_max[1], found_max[1];
   MPI_Status status;
   int *recv_array = (int *) malloc(sizeof(int) * num_procs);;
 
   start = MPI_Wtime();
-  local_max = find_max(local_array, 0, elem_per_node);
+  local_max[0] = find_max(local_array, 0, elem_per_node);
   end = MPI_Wtime();
   dt = end - start;
   process_time += dt;
 
   if( !computerStats )
-    printf("(%s(%d/%d)%s: Local max is %d (%1.8fs)\n", proc_name, local_rank, num_procs, s_local_coords, local_max, dt);
+    printf("(%s(%d/%d)%s: Local max is %d (%1.8fs)\n", proc_name, local_rank, num_procs, s_local_coords, local_max[0], dt);
 
   start = MPI_Wtime();
   //MPI_Reduce(&local_max, &found_max, 1, MPI_INT, MPI_MAX, 0, *comm_new);
-  MPI_Gather(found_max, 1, MPI_INT, recv_array, num_procs, MPI_INT, 0, *comm_new);
+  MPI_Gather(local_max, 1, MPI_INT, recv_array, 1, MPI_INT, 0, *comm_new);
   end = MPI_Wtime();
   dt = end - start;
   comm_time += dt;

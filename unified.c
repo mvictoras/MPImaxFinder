@@ -54,7 +54,6 @@ int main(int argc, char **argv) {
  
   // Parse the arguments
   if( parse_arguments(argc, argv) ) return 1;
-	
   // Initialize MPI
   MPI_Init(&argc, &argv); 
 	MPI_Get_processor_name(proc_name, &name_len);
@@ -75,7 +74,6 @@ int main(int argc, char **argv) {
   t_start = MPI_Wtime();
   local_array = scatter_mpi(&comm_new, local_rank, num_procs, proc_name, &elem_per_node);
 
-  
   if( algo == ring_shift ) {
     fmax_ring_shift(&comm_new, local_rank, num_procs, proc_name, local_array, elem_per_node);
   }
@@ -90,10 +88,10 @@ int main(int argc, char **argv) {
   total_time = t_end - t_start;
 
   if( computerStats ) {
-    printf("g\t%s\t%d\t%d\t%d\t%f\n", s_local_coords, num_procs, k, p, gen_time);
-    printf("p\t%s\t%d\t%d\t%d\t%f\n", s_local_coords, num_procs, k, p, process_time);
-    printf("c\t%s\t%d\t%d\t%d\t%f\n", s_local_coords, num_procs, k, p, comm_time);
-    printf("t\t%s\t%d\t%d\t%d\t%f\n", s_local_coords, num_procs, k, p, total_time);
+    printf("%d\tg\t%s\t%d\t%d\t%d\t%f\n", n, s_local_coords, num_procs, k, p, gen_time);
+    printf("%d\tp\t%s\t%d\t%d\t%d\t%f\n", n, s_local_coords, num_procs, k, p, process_time);
+    printf("%d\tc\t%s\t%d\t%d\t%d\t%f\n", n, s_local_coords, num_procs, k, p, comm_time);
+    printf("%d\tt\t%s\t%d\t%d\t%d\t%f\n", n, s_local_coords, num_procs, k, p, total_time);
   }
 	MPI_Comm_free(&comm_new);
 	MPI_Finalize(); // Exit MPI
@@ -255,10 +253,8 @@ int *generate_array(int num_procs, char *proc_name, int local_rank) {
   
   start = MPI_Wtime();
 	for(i = 0; i < n; i++) {
-		//gen_array[i] = rand();
-	  gen_array[i] = 1;
+		gen_array[i] = rand();
   }
-  gen_array[2345345] = 10;
   end = MPI_Wtime();
   dt = end - start;
   gen_time = dt;

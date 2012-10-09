@@ -1,15 +1,10 @@
 #!/bin/bash
 
-if ( ! getopts "k:n:p:t:a:c" opt); then
+if ( ! getopts "k:n:p:t:a:" opt); then
   echo "Usage: `basename $0` -n <number of numbers> -p <number of physical processors> -k <number of logical processors> -t <ring, hypercube, 2dmesh, tree> -a <ring_shift, reduction, gather>"
   exit 1
 fi
-while getopts ":k:n:p:" opt; do
-    if ! [[ $OPTARG =~ ^[0-9]+$ ]] ; then
-      echo "Option -$opt must be an integer"
-      exit 1
-    fi
-      
+while getopts ":k:n:p:t:a:" opt; do
     case $opt in
     k)
       k=$OPTARG
@@ -39,4 +34,4 @@ done
 
 echo "Creating $n random numbers and using $p physical processors and $k logical processors"
 num_nodes=$[$p*$k]
-qsub -V -l nodes=$p:ppn=$k -q student_short -v n=$n,p=$p,k=$k,t=$t,a=$a,c=$c ${HOME}/proj1/process.sh 
+qsub -V -l nodes=$p:ppn=$k -v n=$n,p=$p,k=$k,t=$t,a=$a ${HOME}/proj1/process.sh 

@@ -3,7 +3,7 @@ CC=mpicc
 all: manual_scatter ring_scatter ring_shift ring_reduction unified
 
 unified: unified.c
-			$(CC) -o unified unified.c
+			$(CC) -lm -o unified unified.c
 
 manual_scatter: manual_scatter.c
 			$(CC) -o manual_scatter manual_scatter.c

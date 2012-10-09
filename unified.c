@@ -147,7 +147,7 @@ int parse_arguments(int argc, char **argv) {
         else if( strcmp(optarg, "reduction" ) == 0 ) algo = reduction;
         else if( strcmp(optarg, "gather" ) == 0 ) algo = gather;
         else {
-          fprintf( stderr, "Option -%c %s in incorrect. Allowed values are: ring_shift, reduction\n", optopt, optarg);
+          fprintf( stderr, "Option -%c %s in incorrect. Allowed values are: ring_shift, reduction, gather\n", optopt, optarg);
           return 1;
         }
         break;

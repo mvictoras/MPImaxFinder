@@ -6,4 +6,4 @@
 #PBS -N unified
 
 num_nodes=$[$p*$k]
-mpiexec -np $num_nodes ${HOME}/proj1/unified -n $n -p $p -k $k -t $t -a $a -c
+mpiexec -np $num_nodes unified -n $n -p $p -k $k -t $t -a $a -c

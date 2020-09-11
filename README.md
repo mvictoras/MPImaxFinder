@@ -1,6 +1,4 @@
 # MPImaxFinder
-============
-
 
 Program that finds the MAX number in an array of n numbers using MPI
 For this project I implemented the find_max algorithm for use on clusters. The program creates a random set of numbers on n nodes, distributes the array across the n nodes of the cluster and then finds the max. The program also calculates the processing time, communication time and overall time to find the max. It outputs the results in either a human readable form, or in a tab separated output.
@@ -8,18 +6,15 @@ For this project I implemented the find_max algorithm for use on clusters. The p
 When running the code you can also setup the topology (ring, 2dmesh, hypercube, tree) as well as the find_max algorithm that will be used: ring_shift, gather or reduction.
 
 # Source Code
-============
 ```git pull https://github.com/mvictoras/MPImaxFinder```
 
 # Compiling
-============
 I have supplied a Makefile to make compilation easier.
 ```make```
 
 You will need to have mpicc, the Open MPI C convenience wrapper installed on your system. If not, please modify the Makefile or compile manually. 
 
 # Running
-============
 There are two scripts to help you submit your code to the cluster, and you might need to modify them based on the configuration of the machines you will be using. In this case, qsub is used to submit the jobs to the scheduler.
 
 ```submit.sh``` submits the job to the scheduler, while ```process.sh``` is the script that will be executed on each node. 

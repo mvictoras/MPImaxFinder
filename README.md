@@ -10,7 +10,10 @@ When running the code you can also setup the topology (ring, 2dmesh, hypercube, 
 
 # Compiling
 I have supplied a Makefile to make compilation easier.
-```make```
+
+```
+make
+```
 
 You will need to have mpicc, the Open MPI C convenience wrapper installed on your system. If not, please modify the Makefile or compile manually. 
 
@@ -33,12 +36,22 @@ All the arguments are mandatory. The -c option is optional. By default the progr
 
 Example:
 Using 2 nodes with a ring topology and the gather find_max algorithm, generate a set of 1000 numbers and find the max.
-```./submit.sh 1000 -n 2 -t ring -a gather```
+
+```
+./submit.sh 1000 -n 2 -t ring -a gather
+```
 
 You can also submit the job in interactive mode:
-```qsub -I -n 2 -t 10```
+
+```
+qsub -I -n 2 -t 10
+```
 
 Now submit the job:
-```mpiexec -n 24 ./unified -s 1000 -t ring -a gather```
+
+```
+mpiexec -n 24 ./unified -s 1000 -t ring -a gather
+```
+
 Note: We are using 12 processes per node, sp 2 * 12 = 24
 

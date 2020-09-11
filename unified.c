@@ -37,7 +37,7 @@
 #include <time.h>
 #include <unistd.h>
 
-int n, k, p, dimension, *local_coords;
+int s, dimension, *local_coords;
 char s_local_coords[255];
 int computerStats = 0;
 // Timing
@@ -119,10 +119,7 @@ int main(int argc, char **argv) {
   total_time = t_end - t_start;
 
   if( computerStats ) {
-    printf("%d\tg\t%s\t%d\t%d\t%d\t%f\n", n, s_local_coords, num_procs, k, p, gen_time);
-    printf("%d\tp\t%s\t%d\t%d\t%d\t%f\n", n, s_local_coords, num_procs, k, p, process_time);
-    printf("%d\tc\t%s\t%d\t%d\t%d\t%f\n", n, s_local_coords, num_procs, k, p, comm_time);
-    printf("%d\tt\t%s\t%d\t%d\t%d\t%f\n", n, s_local_coords, num_procs, k, p, total_time);
+    printf("%d\t%s\t%d\t%fs\t%fs\t%fs\t%fs\n", s, s_local_coords, num_procs, gen_time, process_time, comm_time, total_time);
   }
 	MPI_Comm_free(&comm_new);
 	MPI_Finalize(); // Exit MPI
@@ -133,16 +130,10 @@ int main(int argc, char **argv) {
 int parse_arguments(int argc, char **argv) {
 	int c;
 
-	while( (c = getopt (argc, argv, "n:k:p:t:a:c")) != -1 ) {
+	while( (c = getopt (argc, argv, "s:t:a:c")) != -1 ) {
 		switch(c) {
-			case 'n':
-				n = atoi(optarg);
-				break;
-			case 'k':
-				k = atoi(optarg);
-				break;
-			case 'p':
-				p = atoi(optarg);
+			case 's':
+				s = atoi(optarg);
 				break;
       case 't':
         if( strcmp(optarg, "ring" ) == 0 ) type = ring;
@@ -167,7 +158,7 @@ int parse_arguments(int argc, char **argv) {
         computerStats = 1;
         break;
       case '?':
-				if( optopt == 'n' || optopt == 'k' || optopt == 'p' )
+				if( optopt == 'n' || optopt == 'p' )
 					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
 				else if (isprint (optopt))
 					fprintf (stderr, "Unknown option `-%c'.\n", optopt);
@@ -175,8 +166,8 @@ int parse_arguments(int argc, char **argv) {
 					fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
 				return 1;
 			default:
-				fprintf(stderr, "Usage: %s -n <number of numbers> -k <number of logical processors> -p <number of physical processors>\n", argv[0]);
-				fprintf(stderr, "\tExample: %s -n 1000 -k 10 -p 4\n", argv[0]);
+				fprintf(stderr, "Usage: %s -s <size of number set>\n", argv[0]);
+				fprintf(stderr, "\tExample: %s -s 1000\n", argv[0]);
 				return 1;
 		}
 	}
@@ -277,13 +268,13 @@ int *generate_array(int num_procs, char *proc_name, int local_rank) {
   double start, end, dt;
   
   if( !computerStats )
-    printf("(%s(%d/%d)%s: Generating %d random numbers using %d physical processors and %d logical processors\n", proc_name, local_rank, num_procs, s_local_coords, n, p, k);
+    printf("(%s(%d/%d)%s: Generating %d random numbers\n", proc_name, local_rank, num_procs, s_local_coords, s);
 	
   srand (iseed);
-	gen_array = (int *)malloc(sizeof(int) * n);
+	gen_array = (int *)malloc(sizeof(int) * s);
   
   start = MPI_Wtime();
-	for(i = 0; i < n; i++) {
+	for(i = 0; i < s; i++) {
 		gen_array[i] = rand();
   }
   end = MPI_Wtime();
@@ -291,7 +282,7 @@ int *generate_array(int num_procs, char *proc_name, int local_rank) {
   gen_time = dt;
 
   if( !computerStats )
-    printf("(%s(%d/%d)%s: %d random numbers generated in %1.8fs\n", proc_name, local_rank, num_procs, s_local_coords, n, dt);
+    printf("(%s(%d/%d)%s: %d random numbers generated in %1.8fs\n", proc_name, local_rank, num_procs, s_local_coords, s, dt);
   
   return gen_array;
 }
@@ -302,8 +293,8 @@ int *scatter_mpi(MPI_Comm *comm_new, int local_rank, int num_procs,
   double start, end, dt;
   if( local_rank == 0 ) {
     gen_array = generate_array(num_procs, proc_name, local_rank);
-  } else gen_array = (int *) malloc(sizeof(int) * n);
-  *elem_per_node = n / num_procs;
+  } else gen_array = (int *) malloc(sizeof(int) * s);
+  *elem_per_node = s / num_procs;
   local_array = (int *) malloc (sizeof(int) * *elem_per_node);
   
   start = MPI_Wtime();

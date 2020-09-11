@@ -1,19 +1,16 @@
 #!/bin/bash
 
-if ( ! getopts "k:n:p:t:a:" opt); then
-  echo "Usage: `basename $0` -n <number of numbers> -p <number of physical processors> -k <number of logical processors> -t <ring, hypercube, 2dmesh, tree> -a <ring_shift, reduction, gather>"
+if ( ! getopts "s:n:p:t:a:" opt); then
+  echo "Usage: `basename $0` -s <size of number set> -n <node count> -t <ring, hypercube, 2dmesh, tree> -a <ring_shift, reduction, gather>"
   exit 1
 fi
-while getopts ":k:n:p:t:a:" opt; do
+while getopts ":k:s:n:t:a:" opt; do
     case $opt in
-    k)
-      k=$OPTARG
+    s)
+      s=$OPTARG
       ;;
     n)
       n=$OPTARG
-      ;;
-    p)
-      p=$OPTARG
       ;;
     t)
       t=$OPTARG
@@ -32,6 +29,5 @@ while getopts ":k:n:p:t:a:" opt; do
   esac
 done
 
-echo "Creating $n random numbers and using $p physical processors and $k logical processors"
-num_nodes=$[$p*$k]
-qsub -V -l nodes=$p:ppn=$k -v n=$n,p=$p,k=$k,t=$t,a=$a process.sh 
+echo "Creating $n random numbers using $n nodes"
+qsub -n $n -t 10 ./process.sh -s $s -t $t -a $a

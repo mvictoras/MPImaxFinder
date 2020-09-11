@@ -29,7 +29,7 @@ Note: we will be using 12 processes per node (see ```process.sh```) with a wallt
 -n <# of nodes> 
 -t <topology: ring, 2dmesh, hypercube, tree> 
 -a <find_max algorithm: ring_shift, gather, reduction>
-[-c] optional. Show stats computer-friendly stats.
+[-c] optional. Show computer-friendly stats.
 ```
 
 All the arguments are mandatory. The -c option is optional. By default the program prints the results into a human readable format, -c outputs in a tab separated format, so that the data can be easily read and processed by other processes.

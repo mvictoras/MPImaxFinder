@@ -53,5 +53,5 @@ Now submit the job:
 mpiexec -n 24 ./unified -s 1000 -t ring -a gather
 ```
 
-Note: We are using 12 processes per node, sp 2 * 12 = 24
+Note: We are using 12 processes per node, so 2 * 12 = 24
 

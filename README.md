@@ -1,6 +1,7 @@
 # MPImaxFinder
 
-Program that finds the MAX number in an array of n numbers using MPI
+Program that finds the MAX number in an array of n numbers using MPI.
+
 For this project I implemented the find_max algorithm for use on clusters. The program creates a random set of numbers on n nodes, distributes the array across the n nodes of the cluster and then finds the max. The program also calculates the processing time, communication time and overall time to find the max. It outputs the results in either a human readable form, or in a tab separated output.
 
 When running the code you can also setup the topology (ring, 2dmesh, hypercube, tree) as well as the find_max algorithm that will be used: ring_shift, gather or reduction.
